@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TaskFlow</title>
+
+<style>
+:root{
+  --bg:#f6f7fb;
+  --card:#ffffff;
+  --border:#dddddd;
+  --text:#111111;
+  --muted:#666666;
+  --red:#c1121f;
+  --blue:#2563eb;
+  --green:#15803d;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+}
+
+body{
+  font-family:Arial, sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+header{
+  background:#111;
+  color:white;
+  padding:22px 30px;
+  border-bottom:5px solid var(--red);
+}
+
+header h1{
+  margin-bottom:5px;
+}
+
+header p{
+  color:#ccc;
+  font-size:14px;
+}
+
+main{
+  padding:24px 30px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  margin-bottom:24px;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.04);
+}
+
+.card h2{
+  margin-bottom:16px;
+  font-size:20px;
+}
+
+input, textarea, select{
+  width:100%;
+  padding:12px;
+  margin-bottom:12px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  font-size:14px;
+}
+
+button{
+  background:var(--blue);
+  color:white;
+  border:none;
+  padding:11px 16px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+button:hover{
+  opacity:0.92;
+}
+
+.task{
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:14px;
+  margin-bottom:12px;
+}
+
+.task-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px;
+}
+
+.priority{
+  padding:4px 8px;
+  border-radius:6px;
+  font-size:12px;
+  font-weight:bold;
+}
+
+.low{background:#e7f5ea;color:#15803d;}
+.medium{background:#eef2ff;color:#2563eb;}
+.high{background:#fff3cd;color:#a16207;}
+.urgent{background:#fde2e2;color:#c1121f;}
+
+.status{
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+
+.tags{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+
+.tag{
+  background:#f0f0f0;
+  padding:4px 8px;
+  border-radius:6px;
+  font-size:12px;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:14px;
+  margin-bottom:20px;
+}
+
+.stat{
+  background:white;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:18px;
+}
+
+.stat-label{
+  color:var(--muted);
+  font-size:13px;
+  margin-bottom:6px;
+}
+
+.stat-value{
+  font-size:28px;
+  font-weight:bold;
+}
+
+.hidden{
+  display:none;
+}
+
+.actions{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+
+.delete-btn{
+  background:var(--red);
+}
+
+.done-btn{
+  background:var(--green);
+}
+
+@media(max-width:900px){
+  .grid{
+    grid-template-columns:1fr;
+  }
+
+  .stats{
+    grid-template-columns:1fr 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>TaskFlow</h1>
+  <p>Task manager API demo with JWT authentication</p>
+</header>
+
+<main>
+
+<div id="authSection" class="grid">
+
+  <div class="card">
+    <h2>Register</h2>
+
+    <input id="regUsername" placeholder="Username">
+    <input id="regEmail" placeholder="Email">
+    <input id="regPassword" type="password" placeholder="Password">
+
+    <button onclick="register()">Create Account</button>
+  </div>
+
+  <div class="card">
+    <h2>Login</h2>
+
+    <input id="loginEmail" placeholder="Email">
+    <input id="loginPassword" type="password" placeholder="Password">
+
+    <button onclick="login()">Login</button>
+  </div>
+
+</div>
+
+<div id="appSection" class="hidden">
+
+  <div class="stats">
+
+    <div class="stat">
+      <div class="stat-label">Total Tasks</div>
+      <div class="stat-value" id="statTotal">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Completed</div>
+      <div class="stat-value" id="statCompleted">0</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Completion Rate</div>
+      <div class="stat-value" id="statRate">0%</div>
+    </div>
+
+    <div class="stat">
+      <div class="stat-label">Overdue</div>
+      <div class="stat-value" id="statOverdue">0</div>
+    </div>
+
+  </div>
+
+  <div class="grid">
+
+    <div class="card">
+      <h2>Create Task</h2>
+
+      <input id="taskTitle" placeholder="Task title">
+
+      <textarea id="taskDescription" placeholder="Description"></textarea>
+
+      <select id="taskPriority">
+        <option value="low">Low</option>
+        <option value="medium" selected>Medium</option>
+        <option value="high">High</option>
+        <option value="urgent">Urgent</option>
+      </select>
+
+      <input id="taskTags" placeholder="Tags (comma separated)">
+
+      <button onclick="createTask()">Create Task</button>
+    </div>
+
+    <div class="card">
+      <h2>Your Tasks</h2>
+
+      <div id="tasksContainer"></div>
+    </div>
+
+  </div>
+
+</div>
+
+</main>
+
+<script>
+
+const API = "http://127.0.0.1:5053";
+
+let token = localStorage.getItem("taskflow_token");
+
+function authHeaders(){
+  return {
+    "Content-Type":"application/json",
+    "Authorization":`Bearer ${token}`
+  };
+}
+
+async function register(){
+
+  const body = {
+    username:document.getElementById("regUsername").value,
+    email:document.getElementById("regEmail").value,
+    password:document.getElementById("regPassword").value
+  };
+
+  const res = await fetch(`${API}/auth/register`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(body)
+  });
+
+  const data = await res.json();
+
+  if(data.token){
+    token = data.token;
+    localStorage.setItem("taskflow_token",token);
+    initApp();
+  }else{
+    alert(data.error || "Registration failed");
+  }
+}
+
+async function login(){
+
+  const body = {
+    email:document.getElementById("loginEmail").value,
+    password:document.getElementById("loginPassword").value
+  };
+
+  const res = await fetch(`${API}/auth/login`,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(body)
+  });
+
+  const data = await res.json();
+
+  if(data.token){
+    token = data.token;
+    localStorage.setItem("taskflow_token",token);
+    initApp();
+  }else{
+    alert(data.error || "Login failed");
+  }
+}
+
+async function createTask(){
+
+  const body = {
+    title:document.getElementById("taskTitle").value,
+    description:document.getElementById("taskDescription").value,
+    priority:document.getElementById("taskPriority").value,
+    tags:document.getElementById("taskTags").value
+      .split(",")
+      .map(t=>t.trim())
+      .filter(Boolean)
+  };
+
+  const res = await fetch(`${API}/tasks`,{
+    method:"POST",
+    headers:authHeaders(),
+    body:JSON.stringify(body)
+  });
+
+  const data = await res.json();
+
+  if(data.id){
+    document.getElementById("taskTitle").value = "";
+    document.getElementById("taskDescription").value = "";
+    document.getElementById("taskTags").value = "";
+
+    loadTasks();
+    loadStats();
+  }else{
+    alert(data.error || "Failed to create task");
+  }
+}
+
+async function loadTasks(){
+
+  const res = await fetch(`${API}/tasks`,{
+    headers:authHeaders()
+  });
+
+  const data = await res.json();
+
+  const container = document.getElementById("tasksContainer");
+
+  container.innerHTML = "";
+
+  data.tasks.forEach(task=>{
+
+    const div = document.createElement("div");
+    div.className = "task";
+
+    div.innerHTML = `
+      <div class="task-top">
+        <strong>${task.title}</strong>
+        <span class="priority ${task.priority}">
+          ${task.priority}
+        </span>
+      </div>
+
+      <div class="status">
+        Status: ${task.status}
+      </div>
+
+      <div>
+        ${task.description || ""}
+      </div>
+
+      <div class="tags">
+        ${(task.tags || []).map(tag=>`
+          <span class="tag">${tag}</span>
+        `).join("")}
+      </div>
+
+      <div class="actions">
+        <button class="done-btn"
+          onclick="markDone(${task.id})">
+          Mark Done
+        </button>
+
+        <button class="delete-btn"
+          onclick="deleteTask(${task.id})">
+          Delete
+        </button>
+      </div>
+    `;
+
+    container.appendChild(div);
+  });
+}
+
+async function markDone(id){
+
+  await fetch(`${API}/tasks/${id}`,{
+    method:"PATCH",
+    headers:authHeaders(),
+    body:JSON.stringify({
+      status:"done"
+    })
+  });
+
+  loadTasks();
+  loadStats();
+}
+
+async function deleteTask(id){
+
+  await fetch(`${API}/tasks/${id}`,{
+    method:"DELETE",
+    headers:authHeaders()
+  });
+
+  loadTasks();
+  loadStats();
+}
+
+async function loadStats(){
+
+  const res = await fetch(`${API}/tasks/stats`,{
+    headers:authHeaders()
+  });
+
+  const data = await res.json();
+
+  document.getElementById("statTotal").textContent =
+    data.total;
+
+  document.getElementById("statCompleted").textContent =
+    data.completed;
+
+  document.getElementById("statRate").textContent =
+    `${data.completion_rate}%`;
+
+  document.getElementById("statOverdue").textContent =
+    data.overdue;
+}
+
+async function initApp(){
+
+  document.getElementById("authSection")
+    .classList.add("hidden");
+
+  document.getElementById("appSection")
+    .classList.remove("hidden");
+
+  await loadTasks();
+  await loadStats();
+}
+
+if(token){
+  initApp();
+}
+
+</script>
+
+</body>
+</html>

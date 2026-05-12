@@ -1,0 +1,86 @@
+# TaskFlow REST API
+
+A production-style RESTful task management API with JWT authentication, full CRUD operations, filtering/pagination, audit logging, and an integrated test suite. Zero external dependencies beyond Flask.
+
+## Features
+- **JWT auth from scratch** — HS256 tokens, no PyJWT needed
+- **Full CRUD** — create, read, update (PATCH), delete tasks
+- **Filtering** — by status, priority, free-text search
+- **Pagination + sorting** — `page`, `per_page`, `sort`, `order`
+- **Audit log** — every mutation tracked in `task_logs`
+- **Input validation** — required fields, enum constraints, length limits
+- **12 integration tests** — all passing
+
+## Setup
+
+```bash
+pip install flask flask-cors
+python app.py              # API on :5053
+python app.py test         # run test suite (with server running)
+```
+
+## API Reference
+
+### Auth
+```
+POST /auth/register    {"username","email","password"}
+POST /auth/login       {"email","password"}
+GET  /auth/me          (requires Bearer token)
+```
+
+### Tasks
+```
+GET    /tasks                         List (auth required)
+       ?status=todo|in_progress|done  Filter by status
+       ?priority=low|medium|high|urgent
+       ?q=search+term                 Full-text search
+       ?sort=created_at&order=desc    Sorting
+       ?page=1&per_page=20            Pagination
+POST   /tasks          {"title","description","status","priority","due_date","tags":[]}
+GET    /tasks/<id>
+PATCH  /tasks/<id>     (partial update any field)
+DELETE /tasks/<id>
+GET    /tasks/stats    Completion rate, by-status breakdown
+GET    /tasks/<id>/logs  Audit trail
+```
+
+### Example
+
+```bash
+# Register
+curl -X POST http://localhost:5053/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"alice","email":"alice@example.com","password":"password123"}'
+
+# Create task
+curl -X POST http://localhost:5053/tasks \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"title":"Finish report","priority":"high","tags":["work","writing"]}'
+```
+
+## Schema
+
+```sql
+users        (id, username, email, password, created_at)
+tasks        (id, user_id, title, description, status, priority, due_date, tags, created_at, updated_at)
+task_logs    (id, task_id, user_id, action, old_value, new_value, created_at)
+```
+
+## Test Suite Output
+```
+  ✓  Register user
+  ✓  Login valid
+  ✓  Login invalid
+  ✓  Get profile
+  ✓  Create task
+  ✓  List tasks
+  ✓  Get task by ID
+  ✓  Update task status
+  ✓  Task statistics
+  ✓  Filter by priority
+  ✓  Delete task
+  ✓  Reject unauthenticated
+
+  12/12 tests passed
+```
