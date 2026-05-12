@@ -585,9 +585,10 @@ def run_tests():
 if __name__ == "__main__":
     import sys
     init_db()
+
     if len(sys.argv) > 1 and sys.argv[1] == "test":
         run_tests()
     else:
-        print("TaskFlow API running on :5053")
-        print("Run tests: python app.py test  (with server running)")
-        app.run(debug=True, port=5053)
+        print("TaskFlow API running")
+        port = int(os.environ.get("PORT", 5053))
+        app.run(host="0.0.0.0", port=port)
